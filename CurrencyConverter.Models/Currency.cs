@@ -13,10 +13,13 @@ namespace CurrencyConverter.Models
         // Map of currencies to their relative rates
         public Dictionary<Currency, decimal> Rates { get; } = new Dictionary<Currency, decimal>();
 
-        public Currency(string currencyName, CurrencyId id)
+        public char CurrencyCharacter { get; }
+
+        public Currency(string currencyName, CurrencyId id, char currencyCharacter)
         {
             this.CurrencyName = currencyName;
             this.Id = id;
+            this.CurrencyCharacter = currencyCharacter;
         }
     }
 }

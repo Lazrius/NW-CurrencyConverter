@@ -95,8 +95,9 @@ else
             return;
         }
 
+        // Get the conversion rate and apply it to the target currency.
         decimal rate = this.SelectedCurrency.Rates[this.TargetCurrency];
         decimal result = this.ConvertAmount * rate;
-        this.ConversionResult = "Total Conversion: " + result;
+        this.ConversionResult = "Total Conversion: " + this.TargetCurrency.CurrencyCharacter + result;
     }
 }

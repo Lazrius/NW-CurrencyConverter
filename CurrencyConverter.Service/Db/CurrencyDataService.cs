@@ -21,12 +21,12 @@ namespace CurrencyConverter.Service.Db
             // In hindsight, I could have done one currency then iterated over their values and divided to get the value
             
             // Create our currencies
-            var usd = new Currency("United States Dollar", CurrencyId.USD);
-            var gbp = new Currency("Great British Pound", CurrencyId.GBP);
-            var jpy = new Currency("Japanese Yen", CurrencyId.JPY);
-            var cad = new Currency("Canadian Dollar", CurrencyId.CAD);
-            var eur = new Currency("Euro", CurrencyId.EUR);
-            var aud = new Currency("Australian Dollar", CurrencyId.AUD);
+            var usd = new Currency("United States Dollar", CurrencyId.USD, '$');
+            var gbp = new Currency("Great British Pound", CurrencyId.GBP, '£');
+            var jpy = new Currency("Japanese Yen", CurrencyId.JPY, '¥');
+            var cad = new Currency("Canadian Dollar", CurrencyId.CAD, '$');
+            var eur = new Currency("Euro", CurrencyId.EUR, '€');
+            var aud = new Currency("Australian Dollar", CurrencyId.AUD, '$');
 
             usd.Rates[eur] = 0.863905m;
             usd.Rates[gbp] = 0.734564m;
