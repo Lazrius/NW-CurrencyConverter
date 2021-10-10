@@ -1,0 +1,96 @@
+@page "/"
+
+@using CurrencyConverter.Service.Db
+@using CurrencyConverter.Models
+@inject CurrencyDataService _dataService
+
+<h1>Currency Converter</h1>
+
+<p></p>
+
+@if (Currencies == null)
+{
+    <p><em>Loading Currencies...</em></p>
+}
+else
+{
+    @if (SelectedCurrency != null)
+    {
+        <h3>Selected Currenecy: @(SelectedCurrency.CurrencyName) - @SelectedCurrency.Id</h3>
+        <h3>Last Updated: @LastUpdate.ToShortDateString()</h3>
+    }
+    <select @onchange="OnCurrencyChange">
+        @foreach (var i in Currencies)
+        {
+            <option value="@i">@i</option>
+        }
+    </select>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Currency</th>
+                <th>Currency Code</th>
+                <th>Relative Exchange Rate</th>
+                <th>100 Unit Value</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var i in SelectedCurrency.Rates)
+            {
+                <tr>
+                    <td>@i.Key.CurrencyName</td>
+                    <td>@i.Key.Id</td>
+                    <td>@i.Value</td>
+                    <td>@(i.Value * 100)</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<CurrencyId> Currencies { get; set; }
+    private Currency SelectedCurrency { get; set; }
+    private DateTime LastUpdate { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        this.Currencies = _dataService.GetCurrencyList().ToList();
+        
+        // Ensure there is at least one item
+        if (this.Currencies.Count > 0)
+        {
+            var res = await this._dataService.GetCurrencyDataAsync(this.Currencies.First().ToString());
+            if (res.Error is null)
+            {
+                this.SelectedCurrency = res.Currency;
+                this.LastUpdate = res.LastUpdate;
+            }
+        }
+    }
+
+    private async Task OnCurrencyChange(ChangeEventArgs args)
+    {
+        ApiResult res;
+
+        var changedValue = args.Value as string;
+        if (string.IsNullOrWhiteSpace(changedValue) || !Enum.TryParse(changedValue, out CurrencyId cur))
+        {
+    // Error, most likely adjusted with InspectElement
+    // If this occurs, probably best to reset the options
+            res = await this._dataService.GetCurrencyDataAsync(this.Currencies.First().ToString());
+            if (res.Error is null)
+            {
+                this.SelectedCurrency = res.Currency;
+                this.LastUpdate = res.LastUpdate;
+            }
+        }
+
+        res = await this._dataService.GetCurrencyDataAsync(changedValue);
+        if (res.Error is null)
+        {
+            this.SelectedCurrency = res.Currency;
+            this.LastUpdate = res.LastUpdate;
+        }
+    }
+}
