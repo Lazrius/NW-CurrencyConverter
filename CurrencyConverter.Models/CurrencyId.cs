@@ -10,7 +10,7 @@ namespace CurrencyConverter.Models
         USD,
         GBP,
         EUR,
-        JYP,
+        JPY,
         CAD,
         AUD
         // ReSharper restore InconsistentNaming
