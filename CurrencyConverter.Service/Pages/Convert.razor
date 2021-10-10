@@ -1,0 +1,102 @@
+@page "/convert"
+
+@using CurrencyConverter.Service.Db
+@using CurrencyConverter.Models
+@inject CurrencyDataService _dataService
+
+<h1>Currency Converter</h1>
+
+@if (Currencies == null)
+{
+    <p><em>Loading Currencies...</em></p>
+}
+else
+{
+    <div class="form-group">
+        <label for="selectedCurrency">Selected Currency: </label>
+        <select @onchange="OnSelectedCurrencyChange" id="selectedCurrency" class="form-control">
+            <option hidden disabled selected>Selected Currency</option>
+            @foreach (var i in Currencies)
+            {
+                <option value="@i">@i</option>
+            }
+        </select>
+    </div>
+    <div class="form-group">
+        <label for="targetCurrency">Target Currency: </label>
+        <select @onchange="OnTargetCurrencyChange" id="targetCurrency" class="form-control">
+            <option hidden disabled selected>Target Currency</option>
+            <!-- Ensure that we don't display the currency we are targeting -->
+            @foreach (var i in Currencies.Where(x => x != SelectedCurrency?.Id))
+            {
+                <option value="@i">@i</option>
+            }
+        </select>
+    </div>
+    
+    <div class="form-group">
+        <label for="convertAmount">Conversion Amount</label>
+        <input type="number" class="form-control" id="convertAmount" @bind="ConvertAmount" placeholder="100">
+    </div>
+    
+    <div class="form-group">
+        <button class="btn btn-primary" @onclick="OnCurrencyConvert">Convert!</button>
+    </div>
+
+    <h1>@ConversionResult</h1>
+}
+
+@code {
+    private List<CurrencyId> Currencies { get; set; }
+    private Currency SelectedCurrency { get; set; }
+    private Currency TargetCurrency { get; set; }
+
+    private decimal ConvertAmount { get; set; }
+    private string ConversionResult { get; set; } = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        this.Currencies = _dataService.GetCurrencyList().ToList();
+    }
+
+    private async Task OnSelectedCurrencyChange(ChangeEventArgs args)
+    {
+        var changedValue = args.Value as string;
+        var res = await this._dataService.GetCurrencyDataAsync(changedValue);
+        if (res.Error is null)
+        {
+            this.SelectedCurrency = res.Currency;
+        }
+    }
+    
+    private async Task OnTargetCurrencyChange(ChangeEventArgs args)
+    {
+        // TODO: Remove needless code duplication
+        var changedValue = args.Value as string;
+        var res = await this._dataService.GetCurrencyDataAsync(changedValue);
+        if (res.Error is null)
+        {
+            this.TargetCurrency = res.Currency;
+        }
+    }
+
+    private void OnCurrencyConvert()
+    {
+        if (this.SelectedCurrency is null || this.TargetCurrency is null)
+        {
+            // Handle error, again, most likely would occur with inspect element
+            return;
+        }
+
+        if (!this.SelectedCurrency.Rates.ContainsKey(this.TargetCurrency))
+        {
+            // The target currency doesn't have a valid conversion rate
+            // TODO: Handle and tell user what went wrong
+            return;
+        }
+
+        decimal rate = this.SelectedCurrency.Rates[this.TargetCurrency];
+        decimal result = this.ConvertAmount * rate;
+        this.ConversionResult = "Total Conversion: " + result;
+    }
+}
