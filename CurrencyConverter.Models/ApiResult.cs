@@ -5,8 +5,8 @@ namespace CurrencyConverter.Models
 {
     public class ApiResult
     {
-        // Request in the 200- range
-        public bool Successful { get; set; }
+        // Error string, null if successful
+        public string Error { get; set; }
         
         // Time of last currency update - Could potentially integrate with currency class
         public DateTime LastUpdate { get; }
@@ -23,7 +23,7 @@ namespace CurrencyConverter.Models
         /// <returns>A json representation of the api response</returns>
         public override string ToString() => JsonConvert.SerializeObject(this);
         
-        public ApiResult()
+        public ApiResult(string err)
         {
             // Current timestamp that cannot be edited.
             this.Timestamp = DateTime.Now;
@@ -31,6 +31,8 @@ namespace CurrencyConverter.Models
             // Hardcoded update time as this is a POC API. Normally you'd pull this data from the currency data.
             // YYYY-MM-DD format
             this.LastUpdate = DateTime.Parse("2021-10-09");
+
+            this.Error = err;
         }
     }
 }

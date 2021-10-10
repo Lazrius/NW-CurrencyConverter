@@ -11,6 +11,12 @@ namespace CurrencyConverter.Models
         public CurrencyId Id { get; set; }
 
         // Map of currencies to their relative rates
-        public Dictionary<Currency, decimal> Rates { get; set; }
+        public Dictionary<Currency, decimal> Rates { get; } = new Dictionary<Currency, decimal>();
+
+        public Currency(string currencyName, CurrencyId id)
+        {
+            this.CurrencyName = currencyName;
+            this.Id = id;
+        }
     }
 }
