@@ -1,0 +1,121 @@
+﻿@page "/convert"
+@using CurrencyConverter.Models
+
+@inject HttpClient http
+
+<h1>Currency Converter</h1>
+
+@if (Currencies == null)
+{
+    <p><em>Loading Currencies...</em></p>
+}
+else
+{
+    <div class="form-group">
+        <label for="selectedCurrency">Selected Currency: </label>
+        <select @onchange="OnSelectedCurrencyChange" id="selectedCurrency" class="form-control">
+            <option hidden disabled selected>Selected Currency</option>
+            @foreach (var i in Currencies)
+            {
+                <option value="@i">@i</option>
+            }
+        </select>
+    </div>
+    <div class="form-group">
+        <label for="targetCurrency">Target Currency: </label>
+        <select @onchange="OnTargetCurrencyChange" id="targetCurrency" class="form-control">
+            <option hidden disabled selected>Target Currency</option>
+            <!-- Ensure that we don't display the currency we are targeting -->
+            @foreach (var i in Currencies.Where(x => x != SelectedCurrency?.Id))
+            {
+                <option value="@i">@i</option>
+            }
+        </select>
+    </div>
+    
+    <div class="form-group">
+        <label for="convertAmount">Conversion Amount</label>
+        <input type="number" class="form-control" id="convertAmount" @bind="ConvertAmount" placeholder="100">
+    </div>
+    
+    <div class="form-group">
+        <button class="btn btn-primary" @onclick="OnCurrencyConvert">Convert!</button>
+    </div>
+
+    <h1>@ConversionResult</h1>
+}
+
+@code {
+    private List<CurrencyId> Currencies { get; set; }
+    private Currency SelectedCurrency { get; set; }
+    private Currency TargetCurrency { get; set; }
+
+    private decimal ConvertAmount { get; set; }
+    private string ConversionResult { get; set; } = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var results = await http.GetFromJsonAsync<ApiResult<List<CurrencyId>>>("https://localhost:5001/currency");
+        if (results?.Result is null)
+        {
+            // TODO: Handle error
+            return;
+        }
+
+        this.Currencies = results.Result;
+    }
+
+    private async Task<Currency> GetCurrencyFromApi(string id)
+    {
+        var result = await http.GetFromJsonAsync<ApiResult<Currency>>
+            ("https://localhost:5001/currency/id?id=" + id);
+        
+        if (result is null || result.Error != null)
+        {
+            Console.WriteLine(result?.Error);
+            // TODO: Handle error
+            return null;
+        }
+
+        return result.Result;
+    }
+
+    private async Task OnSelectedCurrencyChange(ChangeEventArgs args)
+    {
+        Console.WriteLine("sel 1");
+        var changedValue = args.Value as string;
+        this.SelectedCurrency = await GetCurrencyFromApi(changedValue);
+    }
+    
+    private async Task OnTargetCurrencyChange(ChangeEventArgs args)
+    {
+        Console.WriteLine("sel 2");
+        var changedValue = args.Value as string;
+        this.TargetCurrency = await GetCurrencyFromApi(changedValue);
+    }
+
+    private async Task OnCurrencyConvert()
+    {
+        Console.WriteLine("Clicked");
+        if (this.SelectedCurrency is null || this.TargetCurrency is null)
+        {
+            // Handle error, again, most likely would occur with inspect element
+            return;
+        }
+
+        var result = await http.GetFromJsonAsync<ApiResult<decimal>>
+            ("https://localhost:5001/currency/convert?" +
+                 "selected=" + this.SelectedCurrency.Id + 
+                 "&target=" + this.TargetCurrency.Id +
+                 "&amount=" + this.ConvertAmount);
+
+        if (result is null || result.Error != null)
+        {
+            Console.WriteLine(result?.Error);
+            // Alert user of error...
+            return;
+        }
+        this.ConversionResult = "Total Conversion: " + this.TargetCurrency.CurrencyCharacter + 
+                                result.Result.ToString("#.##");
+    }
+}

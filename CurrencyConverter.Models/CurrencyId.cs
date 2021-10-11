@@ -1,9 +1,10 @@
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using Newtonsoft.Json.Converters;
 
 namespace CurrencyConverter.Models
 {
-    [JsonConverter(typeof(StringEnumConverter))]
+    [Newtonsoft.Json.JsonConverter(typeof(StringEnumConverter))]
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     public enum CurrencyId
     {
         // ReSharper disable InconsistentNaming

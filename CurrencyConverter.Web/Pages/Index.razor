@@ -1,0 +1,104 @@
+﻿@page "/"
+
+@using CurrencyConverter.Models
+@inject HttpClient http
+
+<h1>Exchange Rates</h1>
+
+@if (Currencies == null)
+{
+    <p><em>Loading Currencies...</em></p>
+}
+else
+{
+    @if (SelectedCurrency != null)
+    {
+        <h3>Selected Currenecy: @(SelectedCurrency.CurrencyName) - @SelectedCurrency.Id</h3>
+        <h3>Last Updated: @LastUpdate.ToShortDateString()</h3>
+        <select @onchange="OnCurrencyChange">
+            @foreach (var i in Currencies)
+            {
+                <option value="@i">@i</option>
+            }
+        </select>
+        <table class="table">
+            <thead>
+            <tr>
+                <th>Currency</th>
+                <th>Currency Code</th>
+                <th>Relative Exchange Rate</th>
+                <th>100 Unit Value</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (var i in SelectedCurrency.Rates)
+            {
+                Console.WriteLine(i);
+                // We now need to get the currency
+                var cur = this.Currencies.FirstOrDefault(x => x.Id == i.Key);
+                if (cur is null)
+                    continue;
+
+                Console.WriteLine("found");
+                <tr>
+                    <td>@cur.CurrencyName</td>
+                    <td>@cur.Id</td>
+                    <td>@i.Value</td>
+                    <td>@(i.Value * 100)</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <h3>Loading Currencies...</h3>
+    }
+}
+
+@code {
+    private List<Currency> Currencies { get; } = new List<Currency>();
+    private Currency SelectedCurrency { get; set; }
+    private DateTime LastUpdate { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var results = await http.GetFromJsonAsync<ApiResult<List<CurrencyId>>>
+            ("https://localhost:5001/currency");
+        if (results?.Result is null)
+        {
+            // TODO: Handle error
+            return;
+        }
+
+        foreach (var id in results.Result)
+        {
+            var cur = await http.GetFromJsonAsync<ApiResult<Currency>>
+                ("https://localhost:5001/currency/id?id=" + id);
+            if (cur?.Result != null)
+            {
+                this.Currencies.Add(cur.Result);
+                this.LastUpdate = cur.Result.LastUpdate;
+            }
+        }
+
+        this.SelectedCurrency = this.Currencies.FirstOrDefault();
+        Console.WriteLine(this.SelectedCurrency.Rates.Count);
+    }
+
+    private void OnCurrencyChange(ChangeEventArgs args)
+    {
+        var changedValue = args.Value as string;
+        if (string.IsNullOrWhiteSpace(changedValue) || !Enum.TryParse(changedValue, out CurrencyId cur))
+        {
+            // Error, most likely adjusted with InspectElement
+            // If this occurs, probably best to reset the options
+            this.SelectedCurrency = this.Currencies.First();
+            return;
+        }
+
+        var currency = this.Currencies.FirstOrDefault(x => x.Id == cur);
+        if (currency != null)
+            this.SelectedCurrency = currency;
+    }
+}
